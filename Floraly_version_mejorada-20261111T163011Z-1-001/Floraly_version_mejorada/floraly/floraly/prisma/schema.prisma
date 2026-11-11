@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model auditoria {
+  id             Int      @id @default(autoincrement())
+  tabla_afectada String   @db.VarChar(255)
+  accion         String   @db.VarChar(255)
+  usuario_db     String   @db.VarChar(255)
+  registro_id    Int?
+  detalles       String?
+  fecha          DateTime @default(now()) @db.Timestamp(6)
+}
+
+model carrito {
+  id             Int            @id @default(autoincrement())
+  id_usuario     Int
+  fecha_creacion DateTime       @default(now()) @db.Timestamp(6)
+  usuarios       usuarios       @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  item_carrito   item_carrito[]
+}
+
+model categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @db.VarChar(255)
+  descripcion String?    @db.VarChar(255)
+  activa      Boolean    @default(true)
+  producto    producto[]
+}
+
+model condicion_iva {
+  id          Int        @id @default(autoincrement())
+  descripcion String
+  usuarios    usuarios[]
+}
+
+model direcciones {
+  id                Int                @id @default(autoincrement())
+  id_usuario        Int
+  calle             String             @db.VarChar(255)
+  numero            Int
+  piso              String?            @db.VarChar(50)
+  depto             String?            @db.VarChar(50)
+  localidad         String             @db.VarChar(255)
+  referencia        String?            @db.VarChar(255)
+  observaciones     String?            @db.VarChar(255)
+  id_tipo_direccion Int?
+  tipos_direcciones tipos_direcciones? @relation(fields: [id_tipo_direccion], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios          usuarios           @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pedidos           pedidos[]
+}
+
+model estaciones {
+  id                Int                 @id @default(autoincrement())
+  nombre            String              @db.VarChar(255)
+  producto_estacion producto_estacion[]
+}
+
+model estado_pedido {
+  id                 Int      @id @default(autoincrement())
+  id_pedido          Int
+  estado             String   @db.VarChar(255)
+  fecha_cambio       DateTime @default(now()) @db.Timestamp(6)
+  responsable_cambio String   @db.VarChar(255)
+  pedidos            pedidos  @relation(fields: [id_pedido], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model facturas {
+  id              Int             @id @default(autoincrement())
+  id_pedido       Int
+  nro_factura     String          @unique @db.VarChar(255)
+  id_tipo_factura Int?
+  cuit_receptor   String?         @db.VarChar(20)
+  fecha_emision   DateTime        @default(now()) @db.Timestamp(6)
+  subtotal        Decimal         @db.Decimal(10, 2)
+  impuestos       Decimal         @db.Decimal(10, 2)
+  total           Decimal         @db.Decimal(10, 2)
+  pedidos         pedidos         @relation(fields: [id_pedido], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tipos_facturas  tipos_facturas? @relation(fields: [id_tipo_factura], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model item_carrito {
+  id          Int      @id @default(autoincrement())
+  id_carrito  Int
+  id_producto Int
+  cantidad    Int
+  carrito     carrito  @relation(fields: [id_carrito], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  producto    producto @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model mermas {
+  id       Int      @id @default(autoincrement())
+  id_stock Int
+  cantidad Int
+  motivo   String   @db.VarChar(255)
+  fecha    DateTime @default(now()) @db.Timestamp(6)
+  stock    stock    @relation(fields: [id_stock], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model metodos_pago {
+  id     Int     @id @default(autoincrement())
+  nombre String  @db.VarChar(50)
+  activo Boolean @default(true)
+  pagos  pagos[]
+}
+
+model movimiento_stock {
+  id              Int      @id @default(autoincrement())
+  id_producto     Int
+  tipo_movimiento String   @db.VarChar(255)
+  cantidad        Int
+  motivo          String?  @db.VarChar(255)
+  fecha           DateTime @default(now()) @db.Timestamp(6)
+  producto        producto @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model negocio_info {
+  id         Int     @id @default(autoincrement())
+  nombre     String  @db.VarChar(255)
+  direccion  String  @db.VarChar(255)
+  horario    String? @db.VarChar(255)
+  instagram  String? @db.VarChar(255)
+  facebook   String? @db.VarChar(255)
+  tiktok     String? @db.VarChar(255)
+  logo_url   String? @db.VarChar(255)
+  tipografia String? @db.VarChar(255)
+  estilo     String? @db.VarChar(255)
+}
+
+model ordenes_armado {
+  id               Int              @id @default(autoincrement())
+  id_pedido        Int
+  id_producto      Int
+  fecha_inicio     DateTime         @db.Timestamp(6)
+  id_estado_armado Int?
+  armador_asignado String?          @db.VarChar(100)
+  estados_armados  estados_armados? @relation(fields: [id_estado_armado], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pedidos          pedidos          @relation(fields: [id_pedido], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  producto         producto         @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pagos {
+  id                  Int          @id @default(autoincrement())
+  id_pedido           Int
+  id_metodo_pago      Int
+  estado_pago         String       @db.VarChar(255)
+  fecha_pago          DateTime     @default(now()) @db.Timestamp(6)
+  monto               Decimal      @db.Decimal(12, 2)
+  referencia_pasarela String?      @db.VarChar(100)
+  metodos_pago        metodos_pago @relation(fields: [id_metodo_pago], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  pedidos             pedidos      @relation(fields: [id_pedido], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pedido_detalle {
+  id                Int                 @id @default(autoincrement())
+  id_pedido         Int
+  id_producto       Int
+  cantidad          Int
+  precio_unitario   Decimal             @db.Decimal(12, 2)
+  pedidos           pedidos             @relation(fields: [id_pedido], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  producto          producto            @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  personalizaciones personalizaciones[]
+}
+
+model pedidos {
+  id                       Int              @id @default(autoincrement())
+  id_usuario               Int
+  id_direccion             Int
+  fecha_pedido             DateTime         @default(now()) @db.Timestamp(6)
+  fecha_entrega_programada DateTime?        @db.Timestamp(6)
+  estado                   String           @db.VarChar(255)
+  observaciones            String?          @db.VarChar(255)
+  estado_pedido            estado_pedido[]
+  facturas                 facturas[]
+  ordenes_armado           ordenes_armado[]
+  pagos                    pagos[]
+  pedido_detalle           pedido_detalle[]
+  direcciones              direcciones      @relation(fields: [id_direccion], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  usuarios                 usuarios         @relation(fields: [id_usuario], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model personalizaciones {
+  id                 Int            @id @default(autoincrement())
+  id_detalle         Int
+  mensaje_tarjeta    String?        @db.VarChar(255)
+  preferencia_color  String?        @db.VarChar(255)
+  preferencia_flores String?        @db.VarChar(255)
+  detalle            String?        @db.VarChar(255)
+  pedido_detalle     pedido_detalle @relation(fields: [id_detalle], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model producto {
+  id                     Int                    @id @default(autoincrement())
+  sku                    String?                @unique @db.VarChar(50)
+  nombre                 String                 @db.VarChar(255)
+  descripcion            String?                @db.VarChar(255)
+  precio                 Decimal                @db.Decimal(12, 2)
+  id_categoria           Int
+  id_tipo_producto       Int
+  id_tamano              Int?
+  id_promocion           Int?
+  es_perecedero          Boolean
+  dias_duracion_aprox    Int?
+  requiere_preparacion   Boolean
+  dias_preparacion_horas Int?
+  es_personalizable      Boolean
+  activo                 Boolean                @default(true)
+  item_carrito           item_carrito[]
+  movimiento_stock       movimiento_stock[]
+  ordenes_armado         ordenes_armado[]
+  pedido_detalle         pedido_detalle[]
+  categoria              categoria              @relation(fields: [id_categoria], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  promociones            promociones?           @relation(fields: [id_promocion], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tamano                 tamano?                @relation(fields: [id_tamano], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tipos_producto         tipos_producto         @relation(fields: [id_tipo_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  producto_componentes   producto_componentes[]
+  producto_estacion      producto_estacion[]
+  producto_imagen        producto_imagen[]
+  producto_receta        producto_receta[]
+  stock                  stock[]
+}
+
+model producto_componentes {
+  id              Int      @id @default(autoincrement())
+  id_producto     Int
+  tipo_componente String   @db.VarChar(255)
+  id_referencia   Int
+  cantidad        Int
+  producto        producto @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model producto_estacion {
+  id          Int        @id @default(autoincrement())
+  id_producto Int
+  id_estacion Int
+  disponible  Boolean
+  estaciones  estaciones @relation(fields: [id_estacion], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  producto    producto   @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model producto_imagen {
+  id          Int      @id @default(autoincrement())
+  id_producto Int
+  url_imagen  String   @db.VarChar(255)
+  producto    producto @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model producto_receta {
+  id                 Int      @id @default(autoincrement())
+  id_producto        Int
+  id_stock           Int
+  cantidad_necesaria Int
+  producto           producto @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stock              stock    @relation(fields: [id_stock], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model promociones {
+  id                   Int        @id @default(autoincrement())
+  nombre               String     @db.VarChar(50)
+  porcentaje_descuento Decimal    @db.Decimal(5, 2)
+  fecha_inicio         DateTime   @default(now()) @db.Timestamp(6)
+  fecha_fin            DateTime?  @db.Timestamp(6)
+  activa               Boolean    @default(true)
+  producto             producto[]
+}
+
+model proveedores {
+  id             Int     @id @default(autoincrement())
+  nombre_empresa String  @db.VarChar(100)
+  contacto       String? @db.VarChar(100)
+  telefono       String? @db.VarChar(20)
+  email          String? @db.VarChar(100)
+  stock          stock[]
+}
+
+model roles {
+  id         Int        @id @default(autoincrement())
+  nombre_rol String     @db.VarChar(255)
+  usuarios   usuarios[]
+}
+
+model stock {
+  id              Int               @id @default(autoincrement())
+  id_producto     Int
+  id_proveedor    Int?
+  stock_actual    Int
+  stock_minimo    Int
+  unidad_medida   String            @db.VarChar(255)
+  nombre          String?           @db.VarChar(255)
+  mermas          mermas[]
+  producto_receta producto_receta[]
+  producto        producto          @relation(fields: [id_producto], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  proveedores     proveedores?      @relation(fields: [id_proveedor], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tipos_producto {
+  id       Int        @id @default(autoincrement())
+  nombre   String     @db.VarChar(255)
+  producto producto[]
+}
+
+model usuarios {
+  id               Int            @id @default(autoincrement())
+  id_rol           Int
+  nombre           String         @db.VarChar(255)
+  apellido         String         @db.VarChar(255)
+  email            String         @unique @db.VarChar(255)
+  contrasena_hash  String         @db.VarChar(255)
+  dni              Int?           @unique
+  telefono         String?        @db.VarChar(20)
+  id_condicion_iva Int?
+  fecha_registro   DateTime       @default(now()) @db.Timestamp(6)
+  activo           Boolean        @default(true)
+  eliminado        Boolean        @default(false)
+  carrito          carrito[]
+  direcciones      direcciones[]
+  pedidos          pedidos[]
+  condicion_iva    condicion_iva? @relation(fields: [id_condicion_iva], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles            roles          @relation(fields: [id_rol], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model zonas_envio {
+  id          Int     @id @default(autoincrement())
+  nombre_zona String  @db.VarChar(255)
+  costo_envio Decimal @db.Decimal(12, 2)
+}
+
+model estados_armados {
+  id             Int              @id @default(autoincrement())
+  descripcion    String
+  ordenes_armado ordenes_armado[]
+}
+
+model tamano {
+  id       Int        @id @default(autoincrement())
+  nombre   String     @db.VarChar(255)
+  producto producto[]
+}
+
+model tipos_direcciones {
+  id          Int           @id @default(autoincrement())
+  descripcion String
+  direcciones direcciones[]
+}
+
+model tipos_facturas {
+  id          Int        @id @default(autoincrement())
+  descripcion String
+  facturas    facturas[]
+}
